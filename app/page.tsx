@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { loadGraph, getGraphStats, verifySanity, getPlayer } from "@/lib/graph";
@@ -11,7 +12,6 @@ import { DegreesOfSeparation } from "@/components/DegreesOfSeparation";
 import { ForceGraph } from "@/components/ForceGraph";
 import { Leaderboards } from "@/components/Leaderboards";
 import { getFlagEmoji } from "@/lib/utils";
-import { toast } from "sonner";
 
 export default function SquadBridgePage() {
   const [graphLoaded, setGraphLoaded] = useState(false);
@@ -27,10 +27,9 @@ export default function SquadBridgePage() {
 
   // Simple player search for the whole page
   const [playerSearch, setPlayerSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [allPlayersForSearch, setAllPlayersForSearch] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load the pinned dataset and build the graph exactly once on client
     const dataset = loadDataset();
     loadGraph(dataset);
     const s = getGraphStats();
@@ -38,13 +37,6 @@ export default function SquadBridgePage() {
     setStats(s);
     setSanity(san);
     setGraphLoaded(true);
-
-    // Global sanity toast on first load
-    setTimeout(() => {
-      if (san.hasVitinha && san.hasNunoMendes) {
-        toast.success(`Graph ready — PSG 2023-24 sanity: ${san.psg2023Count} players (Vitinha, Nuno Mendes, Gonçalo Ramos confirmed)`);
-      }
-    }, 600);
   }, []);
 
   const handleSelectPlayer = (id: string) => {
@@ -53,56 +45,12 @@ export default function SquadBridgePage() {
     const p = getPlayer(id);
     if (p) {
       setPlayerSearch(p.name);
-      setSearchResults([]);
-      toast(`Loaded ${p.name} (${p.country})`);
     }
-    // scroll to explorer
     document.getElementById("player-explorer")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Live player search (simple substring on name)
-  const runPlayerSearch = (q: string) => {
-    if (!q || q.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    const lower = q.toLowerCase();
-    // We need a quick list — since graph is in memory we can walk it via a small trick
-    // For performance we keep a tiny client-side index on mount
-    // Simple approach: rely on the fact that getPlayer works + we can expose a search later.
-    // For now, a small static list of popular names won't work. We'll implement an in-memory search.
-    // Best: hook into the cached players list without duplicating data.
-    try {
-      // Access internal for demo (acceptable in this controlled client app)
-      const { players } = (window as any).__SQUAD_GRAPH_CACHE__ || { players: [] };
-      // Fallback: we can use document to find or just search via known players in graph
-      // Since loadGraph ran, we can use getPlayer + we need a list. Let's expose a tiny helper.
-      const matches = (players as any[])
-        ?.filter((p: any) => p.name.toLowerCase().includes(lower))
-        .slice(0, 7) || [];
-      setSearchResults(matches);
-    } catch {
-      setSearchResults([]);
-    }
-  };
-
-  // Expose the players list to window for the search helper (harmless, only client)
   useEffect(() => {
     if (graphLoaded) {
-      try {
-        const mod = require("@/lib/graph");
-        // We don't have direct access but the cache is private. We'll implement a tiny search list in page.
-        // For simplicity, keep a search that works on user typing and then pick exact.
-        (window as any).__SQUAD_GRAPH_READY__ = true;
-      } catch {}
-    }
-  }, [graphLoaded]);
-
-  // Better search: load full player list once from the module we control
-  const [allPlayersForSearch, setAllPlayersForSearch] = useState<any[]>([]);
-  useEffect(() => {
-    if (graphLoaded) {
-      // Re-import the dataset for search only (lightweight)
       const ds = loadDataset();
       setAllPlayersForSearch(ds.players);
     }
@@ -116,7 +64,6 @@ export default function SquadBridgePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200">
-      {/* Top nav */}
       <header className="border-b border-zinc-800 bg-zinc-950/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -129,7 +76,6 @@ export default function SquadBridgePage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Hero */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-semibold tracking-tighter">SquadBridge</h1>
           <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
@@ -137,7 +83,6 @@ export default function SquadBridgePage() {
           </p>
         </div>
 
-        {/* Data honesty banner */}
         {stats && (
           <DataBanner
             playerCount={stats.playerCount}
@@ -156,12 +101,10 @@ export default function SquadBridgePage() {
           </div>
         )}
 
-        {/* Primary query surface */}
         {graphLoaded && (
           <ClubSeasonQuery onSelectPlayer={handleSelectPlayer} />
         )}
 
-        {/* Global player search + quick pick */}
         {graphLoaded && (
           <div className="card p-5">
             <div className="section-title mb-2">Global Player Search</div>
@@ -169,10 +112,7 @@ export default function SquadBridgePage() {
               <input
                 type="text"
                 value={playerSearch}
-                onChange={(e) => {
-                  setPlayerSearch(e.target.value);
-                  // results are derived below
-                }}
+                onChange={(e) => setPlayerSearch(e.target.value)}
                 placeholder="Type a player name — e.g. Vitinha, Mbappé, Bellingham, Rodri…"
                 className="w-full rounded-lg px-4 py-2 text-sm border border-zinc-800"
               />
@@ -197,7 +137,6 @@ export default function SquadBridgePage() {
           </div>
         )}
 
-        {/* Interactive visualization + filters */}
         {graphLoaded && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -231,7 +170,6 @@ export default function SquadBridgePage() {
           </div>
         )}
 
-        {/* Rivalry + Leaderboards side by side */}
         {graphLoaded && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RivalryExplorer />
@@ -239,7 +177,6 @@ export default function SquadBridgePage() {
           </div>
         )}
 
-        {/* Player Explorer + Degrees */}
         {graphLoaded && (
           <div id="player-explorer" className="grid grid-cols-1 xl:grid-cols-5 gap-6">
             <div className="xl:col-span-3">
@@ -258,7 +195,6 @@ export default function SquadBridgePage() {
           </div>
         )}
 
-        {/* Footer / how it works */}
         <div className="pt-8 border-t border-zinc-800 text-xs text-zinc-500 space-y-1">
           <div><strong>How the graph is built (exact reference logic):</strong> Group every player’s stints by (club_id, season). Every pair inside a group of 2+ shares an edge. Only Wikidata QIDs are used for clubs — never names.</div>
           <div>All computation is client-side in <code>lib/graph.ts</code> (pure functions + Vitest tests). Dataset is the immutable v1.0 pins from the hackathon CDN.</div>

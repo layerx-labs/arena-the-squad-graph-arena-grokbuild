@@ -5,7 +5,7 @@ import { Search, Users } from "lucide-react";
 import { getTeammates, getPlayer, getClub, getCachedGraph } from "@/lib/graph";
 import type { Player } from "@/lib/types";
 import { getFlagEmoji } from "@/lib/utils";
-import { toast } from "sonner";
+// toast removed for build (sonner uninstalled)
 
 interface ClubSeasonQueryProps {
   onSelectPlayer?: (id: string) => void;
@@ -51,7 +51,7 @@ export function ClubSeasonQuery({ onSelectPlayer }: ClubSeasonQueryProps) {
   const handleClubSelect = (clubId: string, name: string) => {
     setSelectedClubId(clubId);
     setClubQuery(name);
-    toast.success(`Loaded ${name} — ${season}`);
+    console.log(`Loaded ${name} — ${season}`);
   };
 
   const exportCSV = () => {
@@ -131,7 +131,7 @@ export function ClubSeasonQuery({ onSelectPlayer }: ClubSeasonQueryProps) {
           onClick={() => {
             if (selectedClubId) {
               const tms = getTeammates(selectedClubId, season);
-              toast.info(`${tms.length} players together at ${selectedClub?.name || selectedClubId} in ${season}`);
+              console.log(`${tms.length} players together at ${selectedClub?.name || selectedClubId} in ${season}`);
             }
           }}
           className="self-end h-10 px-4 rounded-lg border border-zinc-800 hover:bg-zinc-900 text-sm flex items-center gap-2"

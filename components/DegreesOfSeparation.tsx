@@ -4,7 +4,7 @@ import { useState } from "react";
 import { GitBranch } from "lucide-react";
 import { getDegreesOfSeparation, getPlayer } from "@/lib/graph";
 import { getFlagEmoji } from "@/lib/utils";
-import { toast } from "sonner";
+// toast removed for build (sonner uninstalled)
 import type { DegreesPath } from "@/lib/types";
 
 interface Props {
@@ -20,15 +20,15 @@ export function DegreesOfSeparation({ playerA, playerB, onSelectPlayer }: Props)
 
   const compute = () => {
     if (!startId || !endId) {
-      toast.error("Pick two players (use the search or click from other panels)");
+      console.log("Pick two players (use the search or click from other panels)");
       return;
     }
     const p = getDegreesOfSeparation(startId, endId);
     setPath(p);
     if (!p) {
-      toast.info("No path found between these two players in the clubmate graph.");
+      console.log("No path found between these two players in the clubmate graph.");
     } else {
-      toast.success(`Path found: ${p.length / 2} hops`);
+      console.log(`Path found: ${p.length / 2} hops`);
     }
   };
 

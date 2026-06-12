@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Self-contained: data/ is bundled
-  // No server actions needed for this static graph explorer
+  // Default server build. Force dynamic for the heavy client graph to avoid
+  // React context issues during static prerender of error infrastructure.
 };
 
 export default nextConfig;

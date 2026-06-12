@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Swords } from "lucide-react";
 import { findCrossNationalBridges, getPlayer } from "@/lib/graph";
 import { getFlagEmoji } from "@/lib/utils";
-import { toast } from "sonner";
+// toast removed for build (sonner uninstalled)
 
 const COMMON_NATIONS = [
   "Brazil", "Argentina", "France", "Portugal", "England", "Spain", "Germany", "Italy",
@@ -48,7 +48,7 @@ export function RivalryExplorer() {
             {COMMON_NATIONS.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
-        <button onClick={() => toast.info(`${bridges.length} bridges found between ${nationA} and ${nationB}`)} className="h-9 px-4 rounded bg-amber-600/90 hover:bg-amber-600 text-xs font-medium">Find Bridges</button>
+        <button onClick={() => console.log(`${bridges.length} bridges found between ${nationA} and ${nationB}`)} className="h-9 px-4 rounded bg-amber-600/90 hover:bg-amber-600 text-xs font-medium">Find Bridges</button>
       </div>
 
       {bridges.length > 0 ? (

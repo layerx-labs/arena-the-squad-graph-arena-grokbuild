@@ -14,6 +14,14 @@ interface Props {
   seasonFilter?: string | null;
 }
 
+interface GraphLink {
+  source: string | { id: string };
+  target: string | { id: string };
+  club_id: string;
+  season: string;
+  club_name: string;
+}
+
 export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational = false, minGroupSize = 2, seasonFilter }: Props) {
   const fgRef = useRef<any>(null);
   const [graphData, setGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] });
@@ -40,8 +48,6 @@ export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational =
         filteredEdges = edges.filter((e) => e.season === seasonFilter);
       }
       if (minGroupSize > 2) {
-        // Simple filter: keep edges only if the club/season group had >= minGroupSize (approximate by counting)
-        // We do a cheap pre-pass
         const groupSizes = new Map<string, number>();
         for (const e of edges) {
           const k = `${e.club_id}:${e.season}`;
@@ -50,7 +56,7 @@ export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational =
         filteredEdges = filteredEdges.filter((e) => (groupSizes.get(`${e.club_id}:${e.season}`) || 0) >= minGroupSize);
       }
 
-      const links = filteredEdges.map((e, i) => ({
+      const links: GraphLink[] = filteredEdges.map((e) => ({
         source: e.source,
         target: e.target,
         club_id: e.club_id,
@@ -62,21 +68,23 @@ export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational =
       let finalLinks = links;
       if (onlyCrossNational) {
         finalLinks = links.filter((l) => {
-          const s = nodeMap.get(l.source)?.country;
-          const t = nodeMap.get(l.target)?.country;
-          return s && t && s !== t;
+          const sCountry = nodeMap.get(typeof l.source === "string" ? l.source : l.source.id)?.country;
+          const tCountry = nodeMap.get(typeof l.target === "string" ? l.target : l.target.id)?.country;
+          return sCountry && tCountry && sCountry !== tCountry;
         });
       }
 
-      // Prune nodes to only those appearing in the filtered links (keeps viz clean)
+      // Prune nodes to only those appearing in the filtered links
       const used = new Set<string>();
-      finalLinks.forEach((l) => {
-        used.add(typeof l.source === "string" ? l.source : l.source.id);
-        used.add(typeof l.target === "string" ? l.target : l.target.id);
+      finalLinks.forEach((l: GraphLink) => {
+        const sId = typeof l.source === "string" ? l.source : l.source.id;
+        const tId = typeof l.target === "string" ? l.target : l.target.id;
+        used.add(sId);
+        used.add(tId);
       });
       const nodes = Array.from(nodeMap.values()).filter((n) => used.has(n.id) || (!finalLinks.length && players.length < 50));
 
-      setGraphData({ nodes: nodes.slice(0, 900), links: finalLinks.slice(0, 4500) }); // hard cap for perf
+      setGraphData({ nodes: nodes.slice(0, 900), links: finalLinks.slice(0, 4500) });
       setReady(true);
     } catch (e) {
       console.error("Graph data error", e);
@@ -115,10 +123,6 @@ export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational =
     }
   };
 
-  const linkCanvasObject = (link: any, ctx: CanvasRenderingContext2D) => {
-    // default is fine
-  };
-
   const handleNodeClick = (node: any) => {
     if (onNodeClick) onNodeClick(node.id);
     if (fgRef.current) {
@@ -139,9 +143,7 @@ export function ForceGraph({ onNodeClick, highlightPlayerId, onlyCrossNational =
           linkColor={() => "#333"}
           linkWidth={0.6}
           onNodeClick={handleNodeClick}
-          onNodeHover={(node) => {
-            // could show tooltip via state if wanted
-          }}
+          onNodeHover={() => {}}
           cooldownTicks={80}
           enableNodeDrag={true}
           enableZoomInteraction={true}
