@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { loadGraph, getGraphStats, verifySanity, getPlayer } from "@/lib/graph";
@@ -9,7 +8,6 @@ import { ClubSeasonQuery } from "@/components/ClubSeasonQuery";
 import { PlayerExplorer } from "@/components/PlayerExplorer";
 import { RivalryExplorer } from "@/components/RivalryExplorer";
 import { DegreesOfSeparation } from "@/components/DegreesOfSeparation";
-import { ForceGraph } from "@/components/ForceGraph";
 import { Leaderboards } from "@/components/Leaderboards";
 import { getFlagEmoji } from "@/lib/utils";
 
@@ -18,14 +16,6 @@ export default function SquadBridgePage() {
   const [stats, setStats] = useState<any>(null);
   const [sanity, setSanity] = useState<any>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [highlightPlayer, setHighlightPlayer] = useState<string | null>(null);
-
-  // Filters for the graph
-  const [onlyCrossNational, setOnlyCrossNational] = useState(true);
-  const [minGroupSize, setMinGroupSize] = useState(3);
-  const [seasonFilter, setSeasonFilter] = useState<string | null>(null);
-
-  // Simple player search for the whole page
   const [playerSearch, setPlayerSearch] = useState("");
   const [allPlayersForSearch, setAllPlayersForSearch] = useState<any[]>([]);
 
@@ -41,11 +31,8 @@ export default function SquadBridgePage() {
 
   const handleSelectPlayer = (id: string) => {
     setSelectedPlayer(id);
-    setHighlightPlayer(id);
     const p = getPlayer(id);
-    if (p) {
-      setPlayerSearch(p.name);
-    }
+    if (p) setPlayerSearch(p.name);
     document.getElementById("player-explorer")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -57,9 +44,7 @@ export default function SquadBridgePage() {
   }, [graphLoaded]);
 
   const liveSearchResults = playerSearch.length > 1
-    ? allPlayersForSearch
-        .filter((p) => p.name.toLowerCase().includes(playerSearch.toLowerCase()))
-        .slice(0, 8)
+    ? allPlayersForSearch.filter((p) => p.name.toLowerCase().includes(playerSearch.toLowerCase())).slice(0, 8)
     : [];
 
   return (
@@ -97,13 +82,11 @@ export default function SquadBridgePage() {
         {graphLoaded && sanity && (
           <div id="gaps" className="text-[11px] text-amber-400/70">
             Graph engine verified: PSG 2023-24 has {sanity.psg2023Count} players including Vitinha, Nuno Mendes & Gonçalo Ramos. 
-            See <a href="https://github.com/layerx-labs/wc2026-squad-graph-dataset/blob/main/gaps.json" target="_blank" className="underline">gaps.json</a> for honest coverage limits (8 players with no history, dateless stints dropped, etc).
+            See <a href="https://github.com/layerx-labs/wc2026-squad-graph-dataset/blob/main/gaps.json" target="_blank" className="underline">gaps.json</a> for honest coverage limits.
           </div>
         )}
 
-        {graphLoaded && (
-          <ClubSeasonQuery onSelectPlayer={handleSelectPlayer} />
-        )}
+        {graphLoaded && <ClubSeasonQuery onSelectPlayer={handleSelectPlayer} />}
 
         {graphLoaded && (
           <div className="card p-5">
@@ -138,39 +121,6 @@ export default function SquadBridgePage() {
         )}
 
         {graphLoaded && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="section-title">Interactive Clubmate Graph (Force-Directed)</div>
-              <div className="flex items-center gap-4 text-xs">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={onlyCrossNational} onChange={(e) => setOnlyCrossNational(e.target.checked)} />
-                  Only cross-national edges
-                </label>
-                <label className="flex items-center gap-1.5">
-                  Min group size
-                  <input type="number" min={2} max={22} value={minGroupSize} onChange={(e) => setMinGroupSize(parseInt(e.target.value) || 2)} className="w-12 bg-zinc-950 border border-zinc-800 rounded px-1 py-0.5 text-center" />
-                </label>
-                <select value={seasonFilter || ""} onChange={(e) => setSeasonFilter(e.target.value || null)} className="bg-zinc-950 border border-zinc-800 rounded px-2 py-0.5 text-xs">
-                  <option value="">All seasons</option>
-                  {["2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25"].map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <ForceGraph
-              onNodeClick={handleSelectPlayer}
-              highlightPlayerId={highlightPlayer}
-              onlyCrossNational={onlyCrossNational}
-              minGroupSize={minGroupSize}
-              seasonFilter={seasonFilter}
-            />
-            <div className="text-[10px] text-center text-zinc-600">Nodes = players (color by nation). Edges = shared club + exact season. Zoom, drag, click nodes to explore.</div>
-          </div>
-        )}
-
-        {graphLoaded && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RivalryExplorer />
             <Leaderboards />
@@ -183,13 +133,9 @@ export default function SquadBridgePage() {
               <PlayerExplorer initialPlayerId={selectedPlayer} onSelectPlayer={handleSelectPlayer} />
             </div>
             <div className="xl:col-span-2">
-              <DegreesOfSeparation
-                playerA={selectedPlayer}
-                playerB={null}
-                onSelectPlayer={handleSelectPlayer}
-              />
+              <DegreesOfSeparation playerA={selectedPlayer} playerB={null} onSelectPlayer={handleSelectPlayer} />
               <div className="mt-3 text-[10px] text-zinc-500 px-1">
-                Tip: Open two players via search or the explorer, then paste their IDs (or names) into the two fields and hit “Find Shortest Path”.
+                Tip: Open two players via search or the explorer, then paste their IDs into the two fields and hit “Find Shortest Path”.
               </div>
             </div>
           </div>
